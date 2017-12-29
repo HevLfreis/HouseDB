@@ -6,7 +6,8 @@ package main
 
 import (
 	"container/list"
-	"net/http"
+	"encoding/json"
+	"reflect"
 	"time"
 
 	"github.com/influxdata/influxdb/client/v2"
@@ -56,17 +57,33 @@ func NewHouse(hid string, url string, district string,
 	return &h
 }
 
-func houseHandler(w http.ResponseWriter, r *http.Request) {
-	log.Info("access index page", "host", r.Host)
+func NewHouseFromQuery(a []interface{}) *House {
+	num_of_fields := reflect.ValueOf(House{}).NumField()
+	if len(a) != num_of_fields {
+		return nil
+	}
 
-	// context := map[string]interface{}{
-	// 	"district_areas": INDEX_DISTRICT_AREAS,
-	// }
-	// render(w, indexTpl, context)
-	render(w, indexTpl, nil)
+	h := House{
+		Hid:         a[0].(string),
+		Url:         a[1].(string),
+		District:    a[2].(string),
+		Area:        a[3].(string),
+		Complex:     a[4].(string),
+		Address:     a[5].(string),
+		Title:       a[6].(string),
+		BuildYear:   Jtoi(a[7].(json.Number)),
+		Layout:      a[8].(string),
+		Total:       Jtoi(a[9].(json.Number)),
+		PerM2:       Jtoi(a[10].(json.Number)),
+		Downpayment: Jtoi(a[11].(json.Number)),
+		Metro:       a[12].(string),
+		HotTotal:    Jtoi(a[13].(json.Number)),
+		Hot7Days:    Jtoi(a[14].(json.Number)),
+	}
+	return &h
 }
 
-func saveHousesToInflux(houses *list.List) error {
+func iHouses(houses *list.List) error {
 	c, err := client.NewHTTPClient(client.HTTPConfig{
 		Addr: DB_ADDR,
 	})

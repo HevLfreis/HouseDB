@@ -13,35 +13,28 @@ import (
 var (
 	PORT              string
 	NUM_CRAWLER       int
-	INTERVAL_SCHED_H  uint64
+	CRON_CRAWL        string
 	INTERVAL_CRAWL_MS int
 
-	INDEX_DISTRICT_AREAS map[string][]string
+	DISTRICTS = []string{"全区域", "浦东", "闵行",
+		"宝山", "徐汇", "普陀", "杨浦", "长宁", "松江",
+		"嘉定", "黄浦", "静安", "闸北", "虹口", "青浦",
+		"奉贤", "金山", "崇明", "上海周边"}
 
 	log log15.Logger
 )
 
 func main() {
-
 	router := initRouter()
 	initLogger()
 
 	INTERVAL_CRAWL_MS = 250
-	INTERVAL_SCHED_H = 12
+	CRON_CRAWL = "0 30 20 * * *" // every day at 20:30
 	NUM_CRAWLER = 32
 	PORT = "8082"
 
-	// INDEX_DISTRICT_AREAS = make(map[string][]string)
-	// districts, _ := sqlGetAllDistricts()
-	// for _, d := range districts {
-	// 	areas, _ := sqlGetAreasInDistrict(d)
-	// 	INDEX_DISTRICT_AREAS[d] = areas
-	// }
-
-	go schedCrawl()
-	// go crawl()
+	cronCrawl()
 
 	log.Info("start http server", "port", PORT)
-	// http.ListenAndServe(":"+PORT, nil)
 	fasthttp.ListenAndServe(":"+PORT, fasthttpadaptor.NewFastHTTPHandler(router))
 }

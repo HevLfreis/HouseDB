@@ -5,114 +5,106 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/influxdata/influxdb/client/v2"
 )
 
 const (
-	DB           = "housedb_test"
+	DB           = "housedb"
 	DB_ADDR      = "http://localhost:8086"
 	DB_PRECISION = "s"
 )
 
-func sqlGetAllDistricts() ([]string, error) {
-
-	sql := `SHOW TAG VALUES FROM "house" WITH KEY="district"`
-
-	c, err := client.NewHTTPClient(client.HTTPConfig{
-		Addr: "http://localhost:8086",
-	})
-	if err != nil {
-		return nil, err
-	}
-	defer c.Close()
-
-	q := client.NewQuery(sql, "housedb_test", "ns")
-	if response, err := c.Query(q); err == nil && response.Error() == nil {
-		values := response.Results[0].Series[0].Values
-
-		fmt.Println(values)
-
-		res := make([]string, len(values))
-		for i, v := range values {
-			res[i] = v[1].(string)
-		}
-		return res, nil
-	} else {
-		return nil, err
-	}
+type House struct {
+	Hid         string `json:"hid"`
+	Url         string `json:"url"`
+	District    string `json:"district"`
+	Area        string `json:"area"`
+	Complex     string `json:"complex"`
+	Address     string `json:"address"`
+	Title       string `json:"title"`
+	BuildYear   int    `json:"build_year"`
+	Layout      string `json:"layout"`
+	Total       int    `json:"total"`
+	PerM2       int    `json:"per_m2`
+	Downpayment int    `json:"downpayment"`
+	Metro       string `json:"metro"`
+	HotTotal    int    `json:"hot_total"`
+	Hot7Days    int    `json:"hot_7days"`
 }
 
-func sqlGetAllDistricts2() ([]string, error) {
+func qSeriesPerM2(district string, area string, comp string) ([]client.Result, error) {
+	var conds []string
+	if district != "" {
+		conds = append(conds, sprintf(`"district"='%s'`, district))
+	}
+	if area != "" {
+		conds = append(conds, sprintf(`"area"='%s'`, area))
+	}
+	if comp != "" {
+		conds = append(conds, sprintf(`"complex"='%s'`, comp))
+	}
+	var where string
+	if len(conds) > 0 {
+		where = "WHERE " + strings.Join(conds, " AND ")
+	}
 
-	sql := `SHOW TAG VALUES FROM "house" WITH KEY="district"`
+	sql := sprintf(`SELECT MEAN("per_m2") FROM "house" %s GROUP BY time(1d) fill(50000)`, where)
 
-	c, err := client.NewHTTPClient(client.HTTPConfig{
+	c, _ := client.NewHTTPClient(client.HTTPConfig{
 		Addr: DB_ADDR,
 	})
-	if err != nil {
-		return nil, err
-	}
+	// if err != nil {
+	// 	return "", err
+	// }
 	defer c.Close()
 
 	q := client.NewQuery(sql, DB, DB_PRECISION)
-	if response, err := c.Query(q); err == nil && response.Error() == nil {
-		values := response.Results[0].Series[0].Values
-
-		fmt.Println(values)
-
-		res := make([]string, len(values))
-		for i, v := range values {
-			res[i] = v[1].(string)
-		}
-		return res, nil
-	} else {
-		return nil, err
-	}
+	response, err := c.Query(q)
+	return response.Results, err
 }
 
-func sqlGetAreasInDistrict(d string) ([]string, error) {
-
-	sql := fmt.Sprintf(
-		`SHOW TAG VALUES FROM "house" WITH KEY="area" WHERE "district"='%s'`, d)
-
-	fmt.Println(sql)
-
-	c, err := client.NewHTTPClient(client.HTTPConfig{
-		Addr: DB_ADDR,
-	})
+func formatUnixTime(s json.Number, format string) string {
+	i, err := strconv.ParseInt(string(s), 10, 64)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
-	defer c.Close()
+	tm := time.Unix(i, 0)
+	return tm.Format(format)
+}
 
-	q := client.NewQuery(sql, DB, "ns")
-	if response, err := c.Query(q); err == nil && response.Error() == nil {
-		values := response.Results[0].Series[0].Values
-		fmt.Println("res", response.Results)
+func Jtoi(j json.Number) int {
+	i, err := strconv.Atoi(string(j))
+	return i
+}
 
-		res := make([]string, len(values))
-		for i, v := range values {
-			res[i] = v[1].(string)
-		}
-		return res, nil
-	} else {
-		return nil, err
-	}
+func print(a ...interface{}) (int, error) {
+	return fmt.Println(a...)
+}
+
+func sprintf(format string, a ...interface{}) string {
+	return fmt.Sprintf(format, a...)
 }
 
 func main() {
-	sqlGetAllDistricts()
-	sqlGetAllDistricts2()
-	// INDEX_DISTRICT_AREAS := make(map[string][]string)
+	// qGetAllDistricts()
+	// sqlGetAllDistricts2()
 
-	// districts, _ := sqlGetAllDistricts()
-	// for _, d := range districts {
-	// 	areas, err := sqlGetAreasInDistrict(d)
-	// 	fmt.Println(err)
-	// 	fmt.Println(areas)
-	// 	INDEX_DISTRICT_AREAS[d] = areas
-	// }
+	// qLastMeanPerM2("", "", "")
+	// qLastMeanPerM2("静安", "", "")
+	// qLastMeanPerM2("静安", "莘庄", "")
+	// qLastMeanPerM2("", "莘庄", "")
+	// qLastMeanPerM2("闵行", "莘庄", "")
+	// qHouseList("闵行", "莘庄", "", 30, 0)
+	// qHouseList("闵行", "九亭", "", 3, 0)
+	// fmt.Println("================")
+	// qHouseList("", "九亭", "", 3, 0)
+	qSeriesPerM2("闵行", "", "")
+	qSeriesPerM2("闵行", "莘庄", "")
 
-	// fmt.Println(keys(INDEX_DISTRICT_AREAS))
 }

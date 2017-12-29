@@ -6,7 +6,6 @@ package main
 
 import (
 	"container/list"
-	"errors"
 	"strconv"
 	"strings"
 	"sync"
@@ -33,11 +32,12 @@ func NewCrawler(id string, targets []string, wg *sync.WaitGroup) *LianJiaCrawler
 
 func (c *LianJiaCrawler) Start() {
 	defer c.waitGroup.Done()
+	log.Info("crawler start", "id", c.Id)
 
 	res := list.New()
 
 	for _, url := range c.Targets {
-		resp, err := FastGet(url)
+		resp, err := httpGet(url)
 		if err != nil {
 			// Todo: list loss, need retry
 			log.Warn("get target list page fail", "url", url)
@@ -55,10 +55,10 @@ func (c *LianJiaCrawler) Start() {
 				c.succ++
 
 				if res.Len() >= 20 {
-					if err := saveHousesToInflux(res); err != nil {
-						log.Warn("save to influx fail", "err", err)
+					if err := iHouses(res); err != nil {
+						log.Warn("insert to influx fail", "err", err)
 					} else {
-						log.Info("save to influx ok")
+						log.Info("insert to influx ok")
 					}
 				}
 			} else {
@@ -68,11 +68,11 @@ func (c *LianJiaCrawler) Start() {
 		}
 	}
 
-	if err := saveHousesToInflux(res); err != nil {
-		log.Warn("save to influx fail", "err", err)
+	if err := iHouses(res); err != nil {
+		log.Warn("insert to influx fail", "err", err)
 	}
 
-	log.Info("crawler finish", "succ", c.succ, "fail", c.fail)
+	log.Info("crawler finish", "id", c.Id, "succ", c.succ, "fail", c.fail)
 }
 
 func (c *LianJiaCrawler) build(item Root) *House {
@@ -121,7 +121,7 @@ func (c *LianJiaCrawler) build(item Root) *House {
 		}
 	}
 
-	resp, err := FastGet(house_page)
+	resp, err := httpGet(house_page)
 	if err != nil {
 		log.Warn("get house page fail", "url", house_page)
 		return nil
@@ -161,6 +161,7 @@ func (c *LianJiaCrawler) build(item Root) *House {
 	}
 	downpayment, _ := extractNum(dm_downpayment.FindAll("span")[1].Text())
 
+	// Todo: not implement
 	hot_total := 0
 	hot_7days := 0
 
@@ -182,11 +183,40 @@ func (c *LianJiaCrawler) build(item Root) *House {
 		hot_7days)
 
 	return house
+}
 
+func crawl() {
+	log.Info("crawl start")
+
+	now := strconv.FormatInt(time.Now().Unix(), 10)
+
+	targets, err := crawlHouseLists()
+	if err != nil {
+		log.Warn("get house list fail", "err", err)
+		return
+	}
+	log.Info("get house list ok", "pages", len(targets))
+
+	var wg sync.WaitGroup
+	wg.Add(NUM_CRAWLER)
+
+	t := len(targets) / NUM_CRAWLER
+	for i := 0; i < NUM_CRAWLER-1; i++ {
+		c := NewCrawler(now+"-"+strconv.Itoa(i),
+			targets[i*t:(i+1)*t], &wg)
+		go c.Start()
+	}
+	c := NewCrawler(now+"-"+strconv.Itoa(NUM_CRAWLER-1),
+		targets[(NUM_CRAWLER-1)*t:], &wg)
+	go c.Start()
+
+	wg.Wait()
+
+	log.Info("crawl end")
 }
 
 func crawlHouseLists() ([]string, error) {
-	resp, err := FastGet(URL_SH_LIANJIA + URL_PREFIX_LIANJIA_ERSHOUFANG)
+	resp, err := httpGet(URL_SH_LIANJIA + URL_PREFIX_LIANJIA_ERSHOUFANG)
 	if err != nil {
 		log.Warn("get house list fail", "err", err)
 		return nil, err
@@ -201,9 +231,6 @@ func crawlHouseLists() ([]string, error) {
 
 	total_results, _ := strconv.Atoi(strings.TrimSpace(dm_total_text.Text()))
 	total_pages := total_results/30 + 1
-
-	// test trick
-	// total_pages = 1
 	targets := make([]string, total_pages)
 
 	for i := 0; i < total_pages; i++ {
@@ -221,8 +248,4 @@ func found(root Root) bool {
 		return false
 	}
 	return true
-}
-
-func DomNotFound() error {
-	return errors.New(ERR_DOM_NOT_FOUND)
 }

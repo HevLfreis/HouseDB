@@ -5,15 +5,16 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="https://bootswatch.com/4/lux/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css">
     <style type="text/css">
-      footer li {
-        float: left;
-        margin-right: 1.5em;
-        margin-bottom: 1.5em;
-      }
-      footer p {
-        clear: left
-      }
+    footer li {
+    float: left;
+    margin-right: 1.5em;
+    margin-bottom: 1.5em;
+    }
+    footer p {
+    clear: left
+    }
     </style>
   </head>
   <body>
@@ -22,13 +23,13 @@
       <div class="collapse navbar-collapse" id="main-navbar">
         <ul class="navbar-nav mr-auto">
           <li class="nav-item">
-            <a class="nav-link" href="#">Home</a>
+            <a class="nav-link" href="http://seeleit.com" target="_blank">Home</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#">Github</a>
+            <a class="nav-link" href="http://github.com/HevLfreis" target="_blank">Github</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#">About</a>
+            <a class="nav-link" href="#" onclick="alert('作者很懒，啥也没有')">About</a>
           </li>
         </ul>
       </div>
@@ -44,111 +45,144 @@
         </div>
       </div>
       <div class="bs-docs-section">
-        <ol class="breadcrumb">
-          <li class="breadcrumb-item"><a href="#">上海</a></li>
-          <li class="breadcrumb-item"><a href="#">浦东</a></li>
-          <li class="breadcrumb-item active">汤臣一品</li>
-        </ol>
+        <div class="row">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="#">上海</a></li>
+            {% if cur_district %}
+              <li class="breadcrumb-item"><a href="#">{{ cur_district }}</a></li>
+            {% endif %}
+            {% if cur_area %}
+              <li class="breadcrumb-item active">{{ cur_area }}</li>
+            {% endif %}
+            {% if cur_complex %}
+              <li class="breadcrumb-item active">{{ cur_complex }}</li>
+            {% endif %}
+          </ol>
+        </div>
       </div>
       <div class="bs-docs-section">
         <div class="row">
           <div class="btn-toolbar" role="toolbar">
             <div class="btn-group mr-2" role="group" aria-label="district group" style="display: inline">
-              {% for d, a in district_areas %}
-                <button type="button" class="btn btn-secondary">{{ d }}</button>
+              <button type="button" class="btn btn-secondary" onclick="window.location.href='/'">全区域</button>
+              {% for d in districts %}
+                <button type="button" class="btn btn-secondary" onclick="window.location.href='/?district={{ d }}'">{{ d }}</button>
               {% endfor %}
             </div>
           </div>
         </div>
+        {% if cur_district %}
+          <hr>
+          <div class="row">
+            <div class="btn-toolbar" role="toolbar">
+              <div class="btn-group mr-2 btn-group-area" role="group" aria-label="area group" style="display: inline">
+                {% for a in areas %}
+                  <button type="button" class="btn btn-secondary" onclick="window.location.href='/?district={{ cur_district }}&area={{ a }}'">{{ a }}</button>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        {% endif %}
+        {% if cur_area %}
+          <hr>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="bs-component">
+                <fieldset>
+                  <legend>选择小区</legend>
+                  <div class="form-group">
+                    <select class="custom-select" onchange="window.location.href='/?district={{ cur_district }}&area={{ cur_area }}&complex='+this.value" style="width: 60%">
+                      {% if not cur_complex %}
+                        <option value="" selected>请选择</option>
+                      {% endif %}
+                      {% for c in complexs %}
+                        <option value="{{ c }}" {% if c == cur_complex %}selected{% endif %}>{{ c }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </fieldset>
+              </div>
+            </div>
+          </div>
+        {% endif %}
       </div>
       <div class="bs-docs-section" style="margin: 4em 0">
         <div class="row">
-          <div class="col-md-8">
+          <div class="col-md-9">
             <div class="card">
-              <div class="card-body">
-                <h4 class="card-title">Card title</h4>
-                <h6 class="card-subtitle mb-2 text-muted">Card subtitle</h6>
-                <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
-                <a href="#" class="card-link">Card link</a>
-                <a href="#" class="card-link">Another link</a>
-              </div>
+              <div id="chart" class="card-body"></div>
             </div>
           </div>
-          <div class="col-md-4">
+          <div class="col-md-3">
             <div class="card">
               <div class="card-body">
-                <h4 class="card-title">Card title</h4>
-                <h6 class="card-subtitle mb-2 text-muted">Card subtitle</h6>
-                <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
-                <a href="#" class="card-link">Card link</a>
-                <a href="#" class="card-link">Another link</a>
+                <h2 class="card-subtitle mb-2 text-muted">{{ cur_loc }}</h2>
+                <br>
+                <div class="row">
+                  <div class="col-md-12">
+                    <h6 class="card-subtitle mb-2 text-muted">实时均价</h6>
+                    <h4 class="card-title">{{ mean|floatformat:"0" }}</h4>
+                  </div>
+                </div>
+                <br>
+                <div class="row">
+                  <div class="col-md-6">
+                    <h6 class="card-subtitle mb-2 text-muted">历史最高</h6>
+                    <h4 class="card-title">{{ max|floatformat:"0" }}</h4>
+                  </div>
+                  <div class="col-md-6">
+                    <h6 class="card-subtitle mb-2 text-muted">历史最低</h6>
+                    <h4 class="card-title">{{ min|floatformat:"0" }}</h4>
+                  </div>
+                </div>
+                <br>
+                <div class="row">
+                  <div class="col-md-12">
+                    <h6 class="card-subtitle mb-2 text-muted">正在出售</h6>
+                    <h4 class="card-title">{{ count|floatformat:"0" }}</h4>
+                  </div>
+                </div>
+                <br>
+                <a class="card-link" href="http://sh.lianjia.com/ershoufang/rs{{ cur_loc }}" target="_blank"><i class="fa fa-search"></i> <strong>在链家搜索</strong></a>
               </div>
             </div>
           </div>
         </div>
       </div>
-      <hr>
-      <div class="bs-docs-section">
-        <table class="table table-hover">
-          <thead>
-            <tr>
-              <th scope="col">Type</th>
-              <th scope="col">Column heading</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Column content</td>
-              <td>Column content</td>
-            </tr>
-            <tr>
-              <td>Column content</td>
-              <td>Column content</td>
-            </tr>
-            <tr>
-              <td>Column content</td>
-              <td>Column content</td>
-            </tr>
-            <tr>
-              <td>Column content</td>
-              <td>Column content</td>
-            </tr>
-          </tbody>
-        </table>
-        <div>
-          <ul class="pagination">
-            <li class="page-item disabled">
-              <a class="page-link" href="#">&laquo;</a>
-            </li>
-            <li class="page-item active">
-              <a class="page-link" href="#">1</a>
-            </li>
-            <li class="page-item">
-              <a class="page-link" href="#">2</a>
-            </li>
-            <li class="page-item">
-              <a class="page-link" href="#">3</a>
-            </li>
-            <li class="page-item">
-              <a class="page-link" href="#">4</a>
-            </li>
-            <li class="page-item">
-              <a class="page-link" href="#">5</a>
-            </li>
-            <li class="page-item">
-              <a class="page-link" href="#">&raquo;</a>
-            </li>
-          </ul>
+      {% if cur_complex %}
+        <div class="bs-docs-section">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th scope="col">ID</th>
+                <th scope="col">区域</th>
+                <th scope="col">房型</th>
+                <th scope="col">总价</th>
+                <th scope="col">单价</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for h in houses %}
+                <tr>
+                  <td><a href="{{ h.Url }}" target="_blank" class="text-primary">{{ h.Hid }}</a></td>
+                  <td>{{ h.District }}|{{ h.Area }}|{{ h.Complex }}</td>
+                  <td>{{ h.Layout }}</td>
+                  <td>{{ h.Total/10000 }}万</td>
+                  <td><i class="fa fa-line-chart"></i> {{ h.PerM2 }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
-      </div>
+      {% endif %}
       <footer id="footer" style="margin: 5em 0">
         <div class="row">
           <div class="col-lg-12">
             <ul class="list-unstyled">
-              <li class="float-lg-right"><a href="#top">Back to top</a></li>
-              <li><a href="http://seeleit.com">Home</a></li>
-              <li><a href="https://github.com/HevLfreis">Github</a></li>
-              <li><a href="https://sh.lianjia.com">Lianjia</a></li>
+              <li class="float-lg-right"><a href="#top"><i class="fa fa-arrow-up"></i></a></li>
+              <li><a href="http://seeleit.com" target="_blank">Home</a></li>
+              <li><a href="https://github.com/HevLfreis" target="_blank">Github</a></li>
+              <li><a href="https://sh.lianjia.com" target="_blank">Lianjia</a></li>
             </ul>
             <p>Developed by <span class="text-primary">HevLfreis</span></p>
             <p>Contact <span class="text-primary">hevlhayt@foxmail.com</span></p>
@@ -159,5 +193,118 @@
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.3/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js"></script>
+    <script src="http://echarts.baidu.com/dist/echarts.min.js"></script>
+    <script src="http://echarts.baidu.com/asset/theme/roma.js"></script>
+    <script type="text/javascript">
+    var xData = function() {
+    var data = [];
+    for (var i = 1; i < 13; i++) {
+    data.push(i + "月份");
+    }
+    return data;
+    }();
+    option = {
+    "tooltip": {
+    "trigger": "axis",
+    "axisPointer": {
+    "type": "shadow",
+    textStyle: {
+    color: "#fff"
+    }
+    },
+    },
+    "grid": {
+    "top": '3%',
+    "bottom": '5%',
+    "left": '7%',
+    "right": '1%'
+    },
+    "xAxis": [{
+    "type": "category",
+    "splitLine": {
+    "show": false
+    },
+    "axisTick": {
+    "show": false
+    },
+    "axisLabel": {
+    "interval": 0,
+    },
+    "data": xData,
+    }],
+    "yAxis": [{
+    "type": "value",
+    "splitLine": {
+    "show": true
+    },
+    "axisTick": {
+    "show": false
+    },
+    "axisLabel": {
+    "interval": 0,
+    },
+    "splitArea": {
+    "show": false
+    },
+    }],
+    "series": [{
+    "name": "均价",
+    "type": "line",
+    symbolSize:12,
+    symbol:'circle',
+    "itemStyle": {
+    "normal": {
+    color: "#666666",
+    borderWidth: 2,
+    "label": {
+    "show": true,
+    "position": "top",
+    formatter: function(p) {
+    return p.value > 0 ? (p.value) : '';
+    }
+    }
+    }
+    },
+    markLine: {
+    silent: true,
+    symbol: "circle",
+    animation: false,
+    lineStyle: {
+    normal: {
+    color: "#5B4CFF",
+    width: 2
+    }
+    },
+    label :{
+    normal: {
+    show: false
+    },
+    },
+    data: [{
+    yAxis: 50000
+    }]
+    },
+    "data": [
+    10361,
+    36931,
+    29621,
+    38101,
+    25191,
+    19151,
+    17481,
+    46751,
+    62091,
+    43231,
+    28651,
+    42981
+    ]
+    },
+    ]
+    }
+    $("#chart").height(400);
+    var chart = echarts.init(document.getElementById('chart'), 'roma');
+    chart.setOption(option);
+    
+    </script>
   </body>
 </html>
