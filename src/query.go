@@ -148,7 +148,7 @@ func qMeanRecentPerM2(district string, area string, comp string) (json.Number, e
 	}
 }
 
-func qSeriesPerM2(district string, area string, comp string) ([]client.Result, error) {
+func qSeriesPerM2(district string, area string, comp string, groupby string) ([]client.Result, error) {
 	var conds []string
 	if district != "" {
 		conds = append(conds, sprintf(`"district"='%s'`, district))
@@ -159,12 +159,26 @@ func qSeriesPerM2(district string, area string, comp string) ([]client.Result, e
 	if comp != "" {
 		conds = append(conds, sprintf(`"complex"='%s'`, comp))
 	}
-	var where string
-	if len(conds) > 0 {
-		where = "WHERE " + strings.Join(conds, " AND ")
+
+	switch groupby {
+	case "month":
+		groupby = "time > now() - 360d GROUP BY time(30d)"
+	case "year":
+		groupby = "GROUP BY time(360d)"
+	case "day":
+		groupby = "time > now() - 30d GROUP BY time(5d)"
+	default:
+		groupby = "time > now() - 30d GROUP BY time(5d)"
 	}
 
-	sql := sprintf(`SELECT MEAN("per_m2") FROM "house" %s GROUP BY time(1d) fill(50000)`, where)
+	var where string
+	if len(conds) > 0 {
+		where = "WHERE " + strings.Join(conds, " AND ") + " AND " + groupby
+	} else {
+		where = "WHERE " + groupby
+	}
+
+	sql := sprintf(`SELECT MEAN("per_m2") FROM "house" %s fill(-1)`, where)
 
 	c, err := client.NewHTTPClient(client.HTTPConfig{
 		Addr: DB_ADDR,
@@ -175,8 +189,35 @@ func qSeriesPerM2(district string, area string, comp string) ([]client.Result, e
 	defer c.Close()
 
 	q := client.NewQuery(sql, DB, DB_PRECISION)
-	response, err := c.Query(q)
-	return response.Results, err
+	log.Debug("query influx", "sql", sql)
+
+	if resp, err := c.Query(q); err == nil && resp.Error() == nil {
+		return resp.Results, nil
+	} else {
+		return nil, err
+	}
+}
+
+func qSeriesHouse(hid string) ([]client.Result, error) {
+
+	sql := sprintf(`SELECT MEAN("per_m2") FROM "house" WHERE "hid"='%s' GROUP BY time(1d) fill(-1)`, hid)
+
+	c, err := client.NewHTTPClient(client.HTTPConfig{
+		Addr: DB_ADDR,
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer c.Close()
+
+	q := client.NewQuery(sql, DB, DB_PRECISION)
+	log.Debug("query influx", "sql", sql)
+
+	if resp, err := c.Query(q); err == nil && resp.Error() == nil {
+		return resp.Results, nil
+	} else {
+		return nil, err
+	}
 }
 
 func qRecentHids(district string, area string, comp string) ([]string, error) {
@@ -220,7 +261,7 @@ func qMaxMinHistoryPerM2(district string, area string, comp string) (json.Number
 		return "", "", nil
 	}
 
-	sql := sprintf(`SELECT MAX("mean"),MIN("mean") FROM (SELECT MEAN("per_m2") FROM "house" %s GROUP BY time(1d))`, where)
+	sql := sprintf(`SELECT MAX("mean"),MIN("mean") FROM (SELECT MEAN("per_m2") FROM "house" %s GROUP BY time(5d))`, where)
 
 	c, err := client.NewHTTPClient(client.HTTPConfig{
 		Addr: DB_ADDR,

@@ -10,7 +10,8 @@ import (
 
 func initRouter() *mux.Router {
 	router := mux.NewRouter()
-	router.HandleFunc("/", houseHandler).Methods("GET").Name("index")
+	router.HandleFunc("/", indexHandler).Methods("GET").Name("index")
 	router.HandleFunc("/series", seriesHandler).Methods("GET").Name("series")
+	router.HandleFunc("/series/house", houseHandler).Methods("GET").Name("house")
 	return router
 }

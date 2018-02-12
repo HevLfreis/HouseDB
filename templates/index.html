@@ -1,310 +1,399 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <title>HouseDB</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="https://bootswatch.com/4/lux/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css">
-    <style type="text/css">
-    footer li {
+
+<head>
+  <title>HouseDB</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/static/css/loaders.min.css">
+  <style type="text/css">
+  footer li {
     float: left;
     margin-right: 1.5em;
     margin-bottom: 1.5em;
-    }
-    footer p {
-    clear: left
-    }
-    </style>
-  </head>
-  <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-      <a class="navbar-brand" href="#">HouseDB</a>
-      <div class="collapse navbar-collapse" id="main-navbar">
-        <ul class="navbar-nav mr-auto">
-          <li class="nav-item">
-            <a class="nav-link" href="http://seeleit.com" target="_blank">Home</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="http://github.com/HevLfreis" target="_blank">Github</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#" onclick="alert('作者很懒，啥也没有')">About</a>
-          </li>
-        </ul>
+  }
+
+  footer p {
+    clear: left;
+  }
+
+  .modal-dialog {
+    max-width: 800px;
+  }
+
+  .square-spin > div {
+    background: #4bbf73;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 150px;
+  }
+  </style>
+</head>
+
+<body>
+  <div id="modal-house" class="modal fade">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"></h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div id="modal-chart" style="width: 750px;height: 400px"></div>
+        </div>
       </div>
-    </nav>
-    <div class="container">
-      <div class="bs-docs-section" style="margin-top: 4em">
-        <div class="row">
-          <div class="col-lg-12">
-            <div class="page-header">
-              <h1 id="typography">房价走势查询</h1>
-            </div>
+    </div>
+  </div>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <a class="navbar-brand" href="#">HouseDB</a>
+    <div class="collapse navbar-collapse" id="main-navbar">
+      <ul class="navbar-nav mr-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="http://seeleit.com" target="_blank">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="http://github.com/HevLfreis" target="_blank">Github</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" onclick="alert('作者很懒，啥也没有')">About</a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+  <div class="container">
+    <div class="bs-docs-section" style="margin-top: 4em">
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="page-header">
+            <h1 id="typography">房价走势查询</h1>
           </div>
         </div>
       </div>
-      <div class="bs-docs-section">
-        <div class="row">
-          <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="#">上海</a></li>
-            {% if cur_district %}
-              <li class="breadcrumb-item"><a href="#">{{ cur_district }}</a></li>
-            {% endif %}
-            {% if cur_area %}
-              <li class="breadcrumb-item active">{{ cur_area }}</li>
-            {% endif %}
-            {% if cur_complex %}
-              <li class="breadcrumb-item active">{{ cur_complex }}</li>
-            {% endif %}
-          </ol>
+    </div>
+    <div class="bs-docs-section">
+      <div class="row">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item text-primary">上海</li>
+          {% if cur_district %}
+            <li class="breadcrumb-item text-primary"><a>{{ cur_district }}</a></li>
+          {% endif %}
+          {% if cur_area %}
+            <li class="breadcrumb-item text-primary"><a>{{ cur_area }}</a></li>
+          {% endif %}
+          {% if cur_complex %}
+            <li class="breadcrumb-item text-primary"><a>{{ cur_complex }}</a></li>
+          {% endif %}
+        </ol>
+      </div>
+    </div>
+    <div class="bs-docs-section">
+      <div class="row">
+        <div class="btn-toolbar" role="toolbar">
+          <div class="btn-group mr-2" role="group" aria-label="district group" style="display: inline">
+            <button type="button" class="btn btn-secondary" onclick="window.location.href='/'">全区域</button>
+            {% for d in districts %}
+              <button type="button" class="btn btn-secondary" onclick="window.location.href='/?district={{ d }}'">{{ d }}</button>
+            {% endfor %}
+          </div>
         </div>
       </div>
-      <div class="bs-docs-section">
+      {% if cur_district %}
+        <hr>
         <div class="row">
           <div class="btn-toolbar" role="toolbar">
-            <div class="btn-group mr-2" role="group" aria-label="district group" style="display: inline">
-              <button type="button" class="btn btn-secondary" onclick="window.location.href='/'">全区域</button>
-              {% for d in districts %}
-                <button type="button" class="btn btn-secondary" onclick="window.location.href='/?district={{ d }}'">{{ d }}</button>
+            <div class="btn-group mr-2 btn-group-area" role="group" aria-label="area group" style="display: inline">
+              {% for a in areas %}
+                <button type="button" class="btn btn-secondary" onclick="window.location.href='/?district={{ cur_district }}&area={{ a }}'">{{ a }}</button>
               {% endfor %}
             </div>
           </div>
-        </div>
-        {% if cur_district %}
-          <hr>
-          <div class="row">
-            <div class="btn-toolbar" role="toolbar">
-              <div class="btn-group mr-2 btn-group-area" role="group" aria-label="area group" style="display: inline">
-                {% for a in areas %}
-                  <button type="button" class="btn btn-secondary" onclick="window.location.href='/?district={{ cur_district }}&area={{ a }}'">{{ a }}</button>
-                {% endfor %}
-              </div>
-            </div>
-          </div>
-        {% endif %}
-        {% if cur_area %}
-          <hr>
-          <div class="row">
-            <div class="col-md-6">
-              <div class="bs-component">
-                <fieldset>
-                  <legend>选择小区</legend>
-                  <div class="form-group">
-                    <select class="custom-select" onchange="window.location.href='/?district={{ cur_district }}&area={{ cur_area }}&complex='+this.value" style="width: 60%">
-                      {% if not cur_complex %}
-                        <option value="" selected>请选择</option>
-                      {% endif %}
-                      {% for c in complexs %}
-                        <option value="{{ c }}" {% if c == cur_complex %}selected{% endif %}>{{ c }}</option>
-                      {% endfor %}
-                    </select>
-                  </div>
-                </fieldset>
-              </div>
-            </div>
-          </div>
-        {% endif %}
-      </div>
-      <div class="bs-docs-section" style="margin: 4em 0">
-        <div class="row">
-          <div class="col-md-9">
-            <div class="card">
-              <div id="chart" class="card-body"></div>
-            </div>
-          </div>
-          <div class="col-md-3">
-            <div class="card">
-              <div class="card-body">
-                <h2 class="card-subtitle mb-2 text-muted">{{ cur_loc }}</h2>
-                <br>
-                <div class="row">
-                  <div class="col-md-12">
-                    <h6 class="card-subtitle mb-2 text-muted">实时均价</h6>
-                    <h4 class="card-title">{{ mean|floatformat:"0" }}</h4>
-                  </div>
-                </div>
-                <br>
-                <div class="row">
-                  <div class="col-md-6">
-                    <h6 class="card-subtitle mb-2 text-muted">历史最高</h6>
-                    <h4 class="card-title">{{ max|floatformat:"0" }}</h4>
-                  </div>
-                  <div class="col-md-6">
-                    <h6 class="card-subtitle mb-2 text-muted">历史最低</h6>
-                    <h4 class="card-title">{{ min|floatformat:"0" }}</h4>
-                  </div>
-                </div>
-                <br>
-                <div class="row">
-                  <div class="col-md-12">
-                    <h6 class="card-subtitle mb-2 text-muted">正在出售</h6>
-                    <h4 class="card-title">{{ count|floatformat:"0" }}</h4>
-                  </div>
-                </div>
-                <br>
-                <a class="card-link" href="http://sh.lianjia.com/ershoufang/rs{{ cur_loc }}" target="_blank"><i class="fa fa-search"></i> <strong>在链家搜索</strong></a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      {% if cur_complex %}
-        <div class="bs-docs-section">
-          <table class="table table-hover">
-            <thead>
-              <tr>
-                <th scope="col">ID</th>
-                <th scope="col">区域</th>
-                <th scope="col">房型</th>
-                <th scope="col">总价</th>
-                <th scope="col">单价</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for h in houses %}
-                <tr>
-                  <td><a href="{{ h.Url }}" target="_blank" class="text-primary">{{ h.Hid }}</a></td>
-                  <td>{{ h.District }}|{{ h.Area }}|{{ h.Complex }}</td>
-                  <td>{{ h.Layout }}</td>
-                  <td>{{ h.Total/10000 }}万</td>
-                  <td><i class="fa fa-line-chart"></i> {{ h.PerM2 }}</td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
         </div>
       {% endif %}
-      <footer id="footer" style="margin: 5em 0">
-        <div class="row">
-          <div class="col-lg-12">
-            <ul class="list-unstyled">
-              <li class="float-lg-right"><a href="#top"><i class="fa fa-arrow-up"></i></a></li>
-              <li><a href="http://seeleit.com" target="_blank">Home</a></li>
-              <li><a href="https://github.com/HevLfreis" target="_blank">Github</a></li>
-              <li><a href="https://sh.lianjia.com" target="_blank">Lianjia</a></li>
-            </ul>
-            <p>Developed by <span class="text-primary">HevLfreis</span></p>
-            <p>Contact <span class="text-primary">hevlhayt@foxmail.com</span></p>
+      <hr>
+      <div class="row">
+        {% if cur_area %}
+          <div class="col-md-4">
+            <div class="bs-component">
+              <fieldset>
+                <legend>选择小区</legend>
+                <div class="form-group">
+                  <select class="custom-select" onchange="window.location.href='/?district={{ cur_district }}&area={{ cur_area }}&complex='+this.value" style="width: 100%">
+                    {% if not cur_complex %}
+                      <option value="" selected>请选择</option>
+                    {% endif %} {
+                    {% for c in complexs %}
+                      <option value="{{ c }}" {% if c==cur_complex %}selected{% endif %}>{{ c }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </fieldset>
+            </div>
+          </div>
+        {% endif %}
+        <div class="col-md-4">
+          <div class="bs-component">
+            <fieldset>
+              <legend>时间</legend>
+              <div class="form-group">
+                <select id="groupby" class="custom-select"  onchange="drawSeries()" style="width: 100%">
+                  <option value="" selected>请选择</option>
+                  <option value="month">月</option>
+                  <option value="year" >年</option>
+                  <option value="day" >最近30天</option>
+                </select>
+              </div>
+            </fieldset>
           </div>
         </div>
-      </footer>
+      </div>
     </div>
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.3/umd/popper.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js"></script>
-    <script src="http://echarts.baidu.com/dist/echarts.min.js"></script>
-    <script src="http://echarts.baidu.com/asset/theme/roma.js"></script>
-    <script type="text/javascript">
-    var xData = function() {
-    var data = [];
-    for (var i = 1; i < 13; i++) {
-    data.push(i + "月份");
-    }
-    return data;
-    }();
-    option = {
-    "tooltip": {
-    "trigger": "axis",
-    "axisPointer": {
-    "type": "shadow",
-    textStyle: {
-    color: "#fff"
-    }
+    <div class="bs-docs-section" style="margin: 4em 0">
+      <div class="row">
+        <div class="col-md-9">
+          <div class="card">
+            <div id="chart" class="card-body" style="height: 400px">
+              <div class="square-spin center-block"><div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card">
+            <div class="card-body">
+              <h2 class="card-subtitle mb-2 text-muted">{{ cur_loc }}</h2>
+              <br>
+              <div class="row">
+                <div class="col-md-12">
+                  <h6 class="card-subtitle mb-2 text-muted">实时均价</h6>
+                  <h4 class="card-title">{{ mean|floatformat:"0" }}</h4>
+                </div>
+              </div>
+              <br>
+              <div class="row">
+                <div class="col-md-6">
+                  <h6 class="card-subtitle mb-2 text-muted">历史最高</h6>
+                  <h4 class="card-title">{{ max|floatformat:"0" }}</h4>
+                </div>
+                <div class="col-md-6">
+                  <h6 class="card-subtitle mb-2 text-muted">历史最低</h6>
+                  <h4 class="card-title">{{ min|floatformat:"0" }}</h4>
+                </div>
+              </div>
+              <br>
+              <div class="row">
+                <div class="col-md-12">
+                  <h6 class="card-subtitle mb-2 text-muted">正在出售</h6>
+                  <h4 class="card-title">{{ count|floatformat:"0" }}</h4>
+                </div>
+              </div>
+              <br>
+              <a class="card-link" href="http://sh.lianjia.com/ershoufang/rs{{ cur_loc }}" target="_blank"><i class="fa fa-search"></i> <strong>在链家搜索</strong></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% if cur_complex %}
+      <div class="bs-docs-section">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th scope="col">ID</th>
+              <th scope="col">区域</th>
+              <th scope="col">房型</th>
+              <th scope="col">总价</th>
+              <th scope="col">单价</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for h in houses %}
+              <tr>
+                <td><a href="{{ h.Url }}" target="_blank" class="text-primary">{{ h.Hid }}</a></td>
+                <td>{{ h.District }}|{{ h.Area }}|{{ h.Complex }}</td>
+                <td>{{ h.Layout }}</td>
+                <td>{{ h.Total/10000 }}万</td>
+                <td><i class="fa fa-line-chart" onclick="openModal('{{ h.Hid }}')"></i> {{ h.PerM2 }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+    <footer id="footer" style="margin: 5em 0">
+      <div class="row">
+        <div class="col-lg-12">
+          <ul class="list-unstyled">
+            <li class="float-lg-right"><a href="#top"><i class="fa fa-arrow-up"></i></a></li>
+            <li><a href="http://seeleit.com" target="_blank">Home</a></li>
+            <li><a href="https://github.com/HevLfreis" target="_blank">Github</a></li>
+            <li><a href="https://sh.lianjia.com" target="_blank">Lianjia</a></li>
+          </ul>
+          <p>Developed by <span class="text-primary">HevLfreis</span></p>
+          <p>Contact <span class="text-primary">hevlhayt@foxmail.com</span></p>
+        </div>
+      </div>
+    </footer>
+  </div>
+  <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.3/umd/popper.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js"></script>
+  <script src="http://echarts.baidu.com/dist/echarts.min.js"></script>
+  <script src="http://echarts.baidu.com/asset/theme/roma.js"></script>
+  <script type="text/javascript">
+
+  var option = {
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: 'rgba(50,50,50,0.4)',
+      axisPointer: {
+        type: 'shadow',
+        textStyle: {
+          color: '#cccccc'
+        }
+      },
     },
+    grid: {
+      top: '3%',
+      bottom: '5%',
+      left: '7%',
+      right: '1%'
     },
-    "grid": {
-    "top": '3%',
-    "bottom": '5%',
-    "left": '7%',
-    "right": '1%'
-    },
-    "xAxis": [{
-    "type": "category",
-    "splitLine": {
-    "show": false
-    },
-    "axisTick": {
-    "show": false
-    },
-    "axisLabel": {
-    "interval": 0,
-    },
-    "data": xData,
+    xAxis: [{
+      type: 'category',
+      splitLine: {
+        show: false
+      },
+      axisTick: {
+        show: false
+      },
+      axisLabel: {
+        interval: 0,
+      }
     }],
-    "yAxis": [{
-    "type": "value",
-    "splitLine": {
-    "show": true
-    },
-    "axisTick": {
-    "show": false
-    },
-    "axisLabel": {
-    "interval": 0,
-    },
-    "splitArea": {
-    "show": false
-    },
+    yAxis: [{
+      type: 'value',
+      splitLine: {
+        show: true
+      },
+      axisTick: {
+        show: false
+      },
+      axisLabel: {
+        interval: 0,
+      },
+      splitArea: {
+        show: false
+      },
+      scale: true,
     }],
-    "series": [{
-    "name": "均价",
-    "type": "line",
-    symbolSize:12,
-    symbol:'circle',
-    "itemStyle": {
-    "normal": {
-    color: "#666666",
-    borderWidth: 2,
-    "label": {
-    "show": true,
-    "position": "top",
-    formatter: function(p) {
-    return p.value > 0 ? (p.value) : '';
-    }
-    }
-    }
-    },
-    markLine: {
-    silent: true,
-    symbol: "circle",
-    animation: false,
-    lineStyle: {
-    normal: {
-    color: "#5B4CFF",
-    width: 2
-    }
-    },
-    label :{
-    normal: {
-    show: false
-    },
-    },
-    data: [{
-    yAxis: 50000
+    series: [{
+      name: '均价',
+      type: 'line',
+      symbolSize: 12,
+      symbol: 'circle',
+      itemStyle: {
+        normal: {
+          color: '#666666',
+          borderWidth: 2,
+          label: {
+            show: true,
+            position: 'right',
+            formatter: function(p) {
+              return p.value > 0 ? (p.value) : '';
+            }
+          }
+        }
+      },
+      // markLine: {
+      //   silent: true,
+      //   symbol: 'circle',
+      //   animation: false,
+      //   lineStyle: {
+      //     normal: {
+      //       color: '#5B4CFF',
+      //       width: 2
+      //     }
+      //   },
+      //   label: {
+      //     normal: {
+      //       show: false
+      //     },
+      //   },
+      //   data: [{
+      //     yAxis: 50000
+      //   }]
+      // }
     }]
-    },
-    "data": [
-    10361,
-    36931,
-    29621,
-    38101,
-    25191,
-    19151,
-    17481,
-    46751,
-    62091,
-    43231,
-    28651,
-    42981
-    ]
-    },
-    ]
-    }
-    $("#chart").height(400);
-    var chart = echarts.init(document.getElementById('chart'), 'roma');
-    chart.setOption(option);
-    
-    </script>
-  </body>
+  }
+
+  var drawSeries = function() {
+    var url = "http://house.seeleit.com/series?" +
+      "district={{ cur_district }}&area={{ cur_area }}&complex={{ cur_complex }}" +
+      "&groupby="+$("#groupby").val();
+
+    var x = [], y = [];
+
+    var opt = $.extend(true, {}, option);
+    opt.xAxis[0].data = x;
+    opt.series[0].data = y;
+
+    $.get(url, function(res) {
+      var v = res.results[0].Series[0].values;
+      for (var i = 0; i < v.length; i++) {
+        if (parseInt(v[i][1]) > 0) {
+          var date = new Date(v[i][0] * 1000);
+          x.push(date.toISOString().slice(5, 10));
+          y.push(parseInt(v[i][1]));
+        }
+      }
+      // console.log(x, y);
+      var chart = echarts.init(document.getElementById('chart'), 'roma');
+      chart.setOption(opt, true);
+    });
+
+  }
+
+  var openModal = function(hid) {
+    var hx = [], hy = [];
+    var opt = $.extend(true, {}, option);
+    opt.xAxis[0].data = hx;
+    opt.series[0].data = hy;
+
+    $("#modal-house").find(".modal-title").text(hid);
+    var url = "http://house.seeleit.com/series/house?hid="+hid;
+
+    $.get(url, function(res) {
+      var v = res.results[0].Series[0].values;
+      for (var i = 0; i < v.length; i++) {
+        if (parseInt(v[i][1]) > 0) {
+          var date = new Date(v[i][0] * 1000);
+          hx.push(date.toISOString().slice(5, 10));
+          hy.push(parseInt(v[i][1]));
+        }
+      }
+      // console.log(x, y);
+      var chart = echarts.init(document.getElementById('modal-chart'), 'roma');
+      chart.setOption(opt, true);
+      $("#modal-house").modal();
+    });
+  }
+
+  // main
+  drawSeries()
+
+  </script>
+  <script type="text/javascript">
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?5555a94897382eced79237c28405e31b";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+  </script>
+</body>
+
 </html>

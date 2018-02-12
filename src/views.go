@@ -11,7 +11,7 @@ import (
 	"github.com/flosch/pongo2"
 )
 
-func houseHandler(w http.ResponseWriter, r *http.Request) {
+func indexHandler(w http.ResponseWriter, r *http.Request) {
 	log.Info("access index page", "addr", r.Header.Get("X-Forwarded-For"))
 
 	district := r.URL.Query().Get("district")
@@ -66,9 +66,21 @@ func seriesHandler(w http.ResponseWriter, r *http.Request) {
 	district := r.URL.Query().Get("district")
 	area := r.URL.Query().Get("area")
 	comp := r.URL.Query().Get("complex")
-	log.Debug("get url params", "district", district, "area", area, "complex", comp)
+	groupby := r.URL.Query().Get("groupby")
+	log.Debug("get url params", "district", district, "area", area, "complex", comp, "groupby", groupby)
 
-	series, _ := qSeriesPerM2(district, area, comp)
+	series, _ := qSeriesPerM2(district, area, comp, groupby)
+
+	jsonp(w, ERRNO_OK, "query ok", series)
+}
+
+func houseHandler(w http.ResponseWriter, r *http.Request) {
+	log.Info("access house api", "addr", r.Header.Get("X-Forwarded-For"))
+
+	hid := r.URL.Query().Get("hid")
+	log.Debug("get url params", "hid", hid)
+
+	series, _ := qSeriesHouse(hid)
 
 	jsonp(w, ERRNO_OK, "query ok", series)
 }
